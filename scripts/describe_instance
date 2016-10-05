@@ -1,0 +1,56 @@
+#!/bin/bash
+
+usage() {
+cat << EOF
+    This script will find instances based on particular filters.
+
+    usage: $0 [-h] [-i ipaddress] [-d dns-name] [-s instance_id]
+EOF
+}
+
+while getopts "hi:d:s:" opt; do
+    case $opt in
+      h)
+          usage
+          exit 1
+          ;;
+      i)
+          FILTER_KEY='network-interface.addresses.private-ip-address'
+          FILTER_VALUE=$OPTARG
+          ;;
+      d)
+          FILTER_KEY='dns-name'
+          FILTER_VALUE=$OPTARG
+          ;;
+      s) 
+          FILTER_KEY='instance-id'
+          FILTER_VALUE=$OPTARG
+          ;;
+      \?)
+          echo "Invalid option: -$OPTARG" >&2
+          usage
+          exit 1
+          ;;
+    esac
+done
+
+if [[ $# -eq 0 ]] ; then
+  usage
+  exit 1
+fi
+
+if [[ -z $FILTER_VALUE ]] ; then
+  echo "Need to supply a value to filter"
+  exit 1
+fi
+
+AWS_PROFILES="core-prod core-dev core-sandpit digital-sandbox digital-dev digital-prod"
+
+for profile in $AWS_PROFILES ; do
+  echo " "
+  echo "============= Searching $profile ============= "
+  aws ec2 describe-instances --profile $profile --filters Name=${FILTER_KEY},Values="${FILTER_VALUE}"
+done
+
+
+
